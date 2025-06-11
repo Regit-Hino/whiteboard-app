@@ -16,6 +16,24 @@ const Whiteboard: React.FC = () => {
   const [socket, setSocket] = useState<Socket | null>(null)
   const [color, setColor] = useState('#000000')
   const [lineWidth, setLineWidth] = useState(2)
+  const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 })
+
+  useEffect(() => {
+    // Canvas size setup
+    const updateCanvasSize = () => {
+      if (typeof window !== 'undefined') {
+        setCanvasSize({
+          width: window.innerWidth - 20,
+          height: window.innerHeight - 120
+        })
+      }
+    }
+    
+    updateCanvasSize()
+    window.addEventListener('resize', updateCanvasSize)
+    
+    return () => window.removeEventListener('resize', updateCanvasSize)
+  }, [])
 
   useEffect(() => {
     const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000'
@@ -195,8 +213,8 @@ const Whiteboard: React.FC = () => {
       </div>
       <canvas
         ref={canvasRef}
-        width={window.innerWidth - 20}
-        height={window.innerHeight - 120}
+        width={canvasSize.width}
+        height={canvasSize.height}
         style={{ 
           border: '1px solid #000', 
           cursor: 'crosshair',
