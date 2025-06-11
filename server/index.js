@@ -8,6 +8,7 @@ const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
     origin: (origin, callback) => {
+      console.log('Origin attempting connection:', origin);
       // Allow localhost and vercel domains
       if (!origin || 
           origin.includes('localhost') || 
