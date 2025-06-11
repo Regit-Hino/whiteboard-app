@@ -4,48 +4,60 @@
 
 ## 構成
 
-- **Server**: Node.js + Express + Socket.io (Heroku)
+- **Server**: Node.js + Express + Socket.io (Render)
 - **Client**: Next.js + React + TypeScript (Vercel)
 
-## セットアップ
+## デプロイ手順
 
-### サーバー側 (Heroku)
+### サーバー側 (Render)
 
-1. Herokuアカウントを作成
-2. Heroku CLIをインストール
-3. サーバーディレクトリで以下を実行:
+1. **Renderアカウント作成**
+   - [render.com](https://render.com)にアクセス
+   - GitHubアカウントでサインアップ
 
-```bash
-cd server
-npm install
-heroku create your-app-name
-git init
-git add .
-git commit -m "Initial commit"
-heroku git:remote -a your-app-name
-git push heroku main
-```
+2. **新しいWebサービス作成**
+   - ダッシュボードで「New +」→「Web Service」を選択
+   - GitHubリポジトリを接続（初回はGitHubアカウント連携が必要）
+
+3. **リポジトリ選択**
+   - `Regit-Hino/whiteboard-app`を選択
+   - 「Connect」をクリック
+
+4. **サービス設定**
+   - **Name**: `whiteboard-server`（任意の名前）
+   - **Environment**: `Node`
+   - **Region**: `Oregon`（最寄りのリージョン選択）
+   - **Branch**: `main`
+   - **Root Directory**: `server`
+   - **Build Command**: `npm install`
+   - **Start Command**: `npm start`
+
+5. **環境変数設定（オプション）**
+   - 「Advanced」→「Add Environment Variable」
+   - `NODE_ENV`: `production`
+
+6. **デプロイ実行**
+   - 「Create Web Service」をクリック
+   - 自動でビルド・デプロイが開始されます
+   - 完了後、`https://your-service-name.onrender.com`のURLが発行されます
 
 ### クライアント側 (Vercel)
 
-1. Vercelアカウントを作成
-2. クライアントディレクトリで以下を実行:
+1. **Vercelアカウント作成**
+   - [vercel.com](https://vercel.com)にアクセス
+   - GitHubアカウントでサインアップ
 
-```bash
-cd client
-npm install
-```
+2. **CLIデプロイ**
+   ```bash
+   cd client
+   npm install
+   npm install -g vercel
+   vercel --yes
+   ```
 
-3. `.env.local`ファイルを作成し、HerokuのURLを設定:
-```
-NEXT_PUBLIC_SERVER_URL=https://your-app-name.herokuapp.com
-```
-
-4. Vercelにデプロイ:
-```bash
-npm install -g vercel
-vercel
-```
+3. **環境変数設定**
+   - Vercelダッシュボードで「Settings」→「Environment Variables」
+   - `NEXT_PUBLIC_SERVER_URL`: Renderで発行されたサーバーURL
 
 ## ローカル開発
 

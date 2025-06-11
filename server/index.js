@@ -7,12 +7,22 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    origin: [
+      "http://localhost:3000",
+      "https://client-fvvebqyck-hino-takafumis-projects.vercel.app",
+      process.env.CLIENT_URL
+    ].filter(Boolean),
     methods: ["GET", "POST"]
   }
 });
 
-app.use(cors());
+app.use(cors({
+  origin: [
+    "http://localhost:3000",
+    "https://client-fvvebqyck-hino-takafumis-projects.vercel.app",
+    process.env.CLIENT_URL
+  ].filter(Boolean)
+}));
 app.use(express.json());
 
 const PORT = process.env.PORT || 5000;
