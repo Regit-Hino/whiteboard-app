@@ -1,0 +1,189 @@
+import React, { useRef, useEffect, useState, useCallback } from 'react'
+import io, { Socket } from 'socket.io-client'
+
+interface DrawData {
+  x: number
+  y: number
+  prevX: number
+  prevY: number
+  color: string
+  lineWidth: number
+}
+
+const Whiteboard: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [socket, setSocket] = useState<Socket | null>(null)
+  const [color, setColor] = useState('#000000')
+  const [lineWidth, setLineWidth] = useState(2)
+
+  useEffect(() => {
+    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000'
+    const newSocket = io(serverUrl)
+    setSocket(newSocket)
+
+    newSocket.on('drawing-data', (data: DrawData[]) => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      data.forEach(drawData => {
+        drawLine(ctx, drawData)
+      })
+    })
+
+    newSocket.on('draw', (data: DrawData) => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      drawLine(ctx, data)
+    })
+
+    newSocket.on('clear', () => {
+      const canvas = canvasRef.current
+      if (!canvas) return
+      
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+    })
+
+    return () => {
+      newSocket.close()
+    }
+  }, [])
+
+  const drawLine = (ctx: CanvasRenderingContext2D, data: DrawData) => {
+    ctx.beginPath()
+    ctx.moveTo(data.prevX, data.prevY)
+    ctx.lineTo(data.x, data.y)
+    ctx.strokeStyle = data.color
+    ctx.lineWidth = data.lineWidth
+    ctx.lineCap = 'round'
+    ctx.stroke()
+  }
+
+  const startDrawing = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    setIsDrawing(true)
+  }
+
+  const draw = (e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!isDrawing) return
+
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const rect = canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const drawData: DrawData = {
+      x,
+      y,
+      prevX: x,
+      prevY: y,
+      color,
+      lineWidth
+    }
+
+    if (e.buttons === 1) {
+      const prevX = x - e.movementX
+      const prevY = y - e.movementY
+      
+      drawData.prevX = prevX
+      drawData.prevY = prevY
+
+      drawLine(ctx, drawData)
+      
+      if (socket) {
+        socket.emit('draw', drawData)
+      }
+    }
+  }
+
+  const stopDrawing = () => {
+    setIsDrawing(false)
+  }
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    
+    if (socket) {
+      socket.emit('clear')
+    }
+  }
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
+      <div style={{ padding: '10px', borderBottom: '1px solid #ccc' }}>
+        <label>
+          Color: 
+          <input 
+            type="color" 
+            value={color} 
+            onChange={(e) => setColor(e.target.value)}
+            style={{ marginLeft: '10px', marginRight: '20px' }}
+          />
+        </label>
+        <label>
+          Brush Size: 
+          <input 
+            type="range" 
+            min="1" 
+            max="20" 
+            value={lineWidth}
+            onChange={(e) => setLineWidth(parseInt(e.target.value))}
+            style={{ marginLeft: '10px', marginRight: '20px' }}
+          />
+          <span>{lineWidth}px</span>
+        </label>
+        <button 
+          onClick={clearCanvas}
+          style={{ 
+            marginLeft: '20px', 
+            padding: '5px 15px',
+            backgroundColor: '#ff4444',
+            color: 'white',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer'
+          }}
+        >
+          Clear
+        </button>
+      </div>
+      <canvas
+        ref={canvasRef}
+        width={window.innerWidth - 20}
+        height={window.innerHeight - 120}
+        style={{ 
+          border: '1px solid #000', 
+          cursor: 'crosshair',
+          backgroundColor: 'white'
+        }}
+        onMouseDown={startDrawing}
+        onMouseMove={draw}
+        onMouseUp={stopDrawing}
+        onMouseLeave={stopDrawing}
+      />
+    </div>
+  )
+}
+
+export default Whiteboard
