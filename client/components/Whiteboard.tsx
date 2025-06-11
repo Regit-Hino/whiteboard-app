@@ -19,8 +19,25 @@ const Whiteboard: React.FC = () => {
 
   useEffect(() => {
     const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000'
-    const newSocket = io(serverUrl)
+    console.log('Connecting to server:', serverUrl)
+    const newSocket = io(serverUrl, {
+      transports: ['websocket', 'polling'],
+      timeout: 20000,
+      forceNew: true
+    })
     setSocket(newSocket)
+
+    newSocket.on('connect', () => {
+      console.log('Connected to server:', newSocket.id)
+    })
+
+    newSocket.on('disconnect', (reason) => {
+      console.log('Disconnected from server:', reason)
+    })
+
+    newSocket.on('connect_error', (error) => {
+      console.error('Connection error:', error)
+    })
 
     newSocket.on('drawing-data', (data: DrawData[]) => {
       const canvas = canvasRef.current
@@ -36,6 +53,7 @@ const Whiteboard: React.FC = () => {
     })
 
     newSocket.on('draw', (data: DrawData) => {
+      console.log('Received draw data:', data)
       const canvas = canvasRef.current
       if (!canvas) return
       
@@ -106,7 +124,10 @@ const Whiteboard: React.FC = () => {
       drawLine(ctx, drawData)
       
       if (socket) {
+        console.log('Emitting draw data:', drawData)
         socket.emit('draw', drawData)
+      } else {
+        console.warn('Socket not connected')
       }
     }
   }
@@ -131,6 +152,10 @@ const Whiteboard: React.FC = () => {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: 'calc(100vh - 60px)' }}>
+      <div style={{ padding: '5px', fontSize: '12px', backgroundColor: '#f0f0f0', borderBottom: '1px solid #ccc' }}>
+        Server URL: {process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000'}
+        {socket ? ` | Connected: ${socket.connected}` : ' | Not connected'}
+      </div>
       <div style={{ padding: '10px', borderBottom: '1px solid #ccc' }}>
         <label>
           Color: 

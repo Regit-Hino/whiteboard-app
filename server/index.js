@@ -7,21 +7,37 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: [
-      "http://localhost:3000",
-      "https://client-fvvebqyck-hino-takafumis-projects.vercel.app",
-      process.env.CLIENT_URL
-    ].filter(Boolean),
-    methods: ["GET", "POST"]
+    origin: (origin, callback) => {
+      // Allow localhost and vercel domains
+      if (!origin || 
+          origin.includes('localhost') || 
+          origin.includes('vercel.app') ||
+          origin === process.env.CLIENT_URL) {
+        callback(null, true);
+      } else {
+        console.log('Blocked origin:', origin);
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    methods: ["GET", "POST"],
+    credentials: true
   }
 });
 
 app.use(cors({
-  origin: [
-    "http://localhost:3000",
-    "https://client-fvvebqyck-hino-takafumis-projects.vercel.app",
-    process.env.CLIENT_URL
-  ].filter(Boolean)
+  origin: (origin, callback) => {
+    // Allow localhost and vercel domains
+    if (!origin || 
+        origin.includes('localhost') || 
+        origin.includes('vercel.app') ||
+        origin === process.env.CLIENT_URL) {
+      callback(null, true);
+    } else {
+      console.log('Express CORS blocked origin:', origin);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true
 }));
 app.use(express.json());
 
@@ -49,6 +65,11 @@ io.on('connection', (socket) => {
   });
 });
 
-server.listen(PORT, () => {
+server.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on port ${PORT}`);
+  console.log('CORS origins:', [
+    "http://localhost:3000",
+    "https://client-fvvebqyck-hino-takafumis-projects.vercel.app",
+    process.env.CLIENT_URL
+  ].filter(Boolean));
 });
