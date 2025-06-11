@@ -36,7 +36,7 @@ const Whiteboard: React.FC = () => {
   }, [])
 
   useEffect(() => {
-    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'http://localhost:5000'
+    const serverUrl = process.env.NEXT_PUBLIC_SERVER_URL || 'https://whiteboard-server-latest.onrender.com'
     console.log('Connecting to server:', serverUrl)
     const newSocket = io(serverUrl, {
       transports: ['websocket', 'polling'],
